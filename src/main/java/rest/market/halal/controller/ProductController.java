@@ -1,6 +1,5 @@
 package rest.market.halal.controller;
 
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.web.bind.annotation.*;
 import rest.market.halal.exceptions.NotFoundException;
 
@@ -11,7 +10,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("product")
-@EnableAutoConfiguration
+@CrossOrigin(origins = "http://localhost:4200")
 public class ProductController {
     private int counter = 4;
 

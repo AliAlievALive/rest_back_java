@@ -1,71 +1,57 @@
 package rest.market.halal.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import rest.market.halal.exceptions.NotFoundException;
+import rest.market.halal.domain.Product;
+import rest.market.halal.domain.Views;
+import rest.market.halal.repo.ProductRepo;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("product")
 @CrossOrigin(origins = "http://localhost:4200")
 public class ProductController {
-    private int counter = 4;
+    private final ProductRepo productRepo;
 
-    private List<Map<String, String>> products = new ArrayList<>() {{
-        add(new HashMap<>() {{
-            put("id", "1");
-            put("name", "Бэлеш");
-        }});
-        add(new HashMap<>() {{
-            put("id", "2");
-            put("name", "Олэш");
-        }});
-        add(new HashMap<>() {{
-            put("id", "3");
-            put("name", "Очпычмак");
-        }});
-    }};
+    @Autowired
+    public ProductController(ProductRepo productRepo) {
+        this.productRepo = productRepo;
+    }
 
     @GetMapping
-    public List<Map<String, String>> getProducts() {
-        return products;
+    @JsonView(Views.IdName.class)
+    public List<Product> getProducts() {
+        return productRepo.findAll();
     }
 
     @GetMapping("{id}")
-    public Map<String, String> getProduct(@PathVariable String id) {
-        return findProduct(id);
-    }
-
-    private Map<String, String> findProduct(String id) {
-        return products.stream()
-                .filter(product -> product.get("id").equals(id))
-                .findFirst()
-                .orElseThrow(NotFoundException::new);
-    }
-
-    @PostMapping
-    public Map<String, String> create(@RequestBody Map<String, String> product) {
-        product.put("id", String.valueOf(counter++));
-        products.add(product);
-
+    @JsonView(Views.FullProduct.class)
+    public Product getProduct(@PathVariable("id") Product product) {
         return product;
     }
 
-    @PutMapping("{id}")
-    public Map<String, String> update(@PathVariable String id, @RequestBody Map<String, String> product) {
-        Map<String, String> productFromDb = findProduct(id);
-        productFromDb.putAll(product);
-        productFromDb.put("id", id);
+    @PostMapping
+    public Product create(@RequestBody Product product) {
+        product.setCreationDate(LocalDateTime.now());
+        return productRepo.save(product);
+    }
 
-        return productFromDb;
+    @PutMapping("{id}")
+    public Product update(
+            @PathVariable("id") Product productFromDb,
+            @RequestBody Product product
+    ) {
+        BeanUtils.copyProperties(product, productFromDb, "id");
+
+        return productRepo.save(productFromDb);
     }
 
     @DeleteMapping("{id}")
-    public void delete(@PathVariable String id) {
-        Map<String, String> product = findProduct(id);
-        products.remove(product);
+    public void delete(@PathVariable("id") Product product) {
+        productRepo.delete(product);
     }
 }
